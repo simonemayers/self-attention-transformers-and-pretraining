@@ -12,7 +12,9 @@ def main():
 
     # Compute accuracy in the range [0.0, 100.0]
     ### YOUR CODE HERE ###
-    pass
+    predictions = ["London"] * sum(1 for _ in open("birth_dev.tsv", encoding="utf-8"))
+    total, correct = utils.evaluate_places("birth_dev.tsv", predictions)
+    accuracy = (correct / total) * 100 if total > 0 else 0.0
     ### END YOUR CODE ###
 
     return accuracy
