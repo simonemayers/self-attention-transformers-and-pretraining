@@ -9,6 +9,8 @@ import utils
 import torch
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from trainer import Trainer, TrainerConfig
+
 
 random.seed(0)
 
@@ -105,8 +107,24 @@ if args.function == 'pretrain':
     # writer=writer
 
     ### YOUR CODE HERE ###
-    pass
+    tconf = TrainerConfig(
+        max_epochs=650,
+        batch_size=128,
+        learning_rate=args.pretrain_lr,
+        lr_decay=True,
+        warmup_tokens=512 * 20,
+        final_tokens=650 * len(pretrain_dataset) * block_size,
+        num_workers=4,
+        writer=writer
+    )
+        
+    trainer = Trainer(model, pretrain_dataset, None, tconf)
+    trainer.train()
+    
+    # Save the pretrained model
+    torch.save(model.state_dict(), args.writing_params_path)
     ### END YOUR CODE ###
+    
 elif args.function == 'finetune':
     assert args.writing_params_path is not None
     assert args.finetune_corpus_path is not None
@@ -143,9 +161,7 @@ elif args.function == 'finetune':
     #     You can use the args.reading_params_path flag to switch between the
     #     number of epochs for each case.
 
-    ### YOUR CODE HERE ###
-    from trainer import Trainer, TrainerConfig
-    
+    ### YOUR CODE HERE ###    
     # Load NameDataset for fine-tuning
     finetune_data = open(args.finetune_corpus_path, encoding='utf-8').read()
     finetune_dataset = dataset.NameDataset(pretrain_dataset, finetune_data)
