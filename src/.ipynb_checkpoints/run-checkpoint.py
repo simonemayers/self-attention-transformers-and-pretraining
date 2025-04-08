@@ -1,11 +1,9 @@
 import random
 import argparse
-
 import dataset
 import models
 import trainer
 import utils
-
 import torch
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -165,10 +163,15 @@ elif args.function == 'finetune':
     # Load NameDataset for fine-tuning
     finetune_data = open(args.finetune_corpus_path, encoding='utf-8').read()
     finetune_dataset = dataset.NameDataset(pretrain_dataset, finetune_data)
+
+    if args.reading_params_path is not None:
+        model.load_state_dict(torch.load(args.reading_params_path))
+        max_epochs = 10
+    else:
+        max_epochs = 75
     
-    # Use hyperparameters for non-pretrained finetuning
     tconf = TrainerConfig(
-        max_epochs=75,
+        max_epochs=max_epochs,
         batch_size=256,
         learning_rate=args.finetune_lr,
         lr_decay=True,

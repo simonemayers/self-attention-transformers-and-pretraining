@@ -32,7 +32,10 @@ def precompute_rotary_emb(dim, max_positions):
     rope_cache = None
     # TODO: [part g]
     ### YOUR CODE HERE ###
-    pass
+    theta = 10000 ** (-torch.arange(0, dim, 2).float() / dim)
+    seq = torch.arange(max_positions).float()
+    freqs = torch.einsum("i,j->ij", seq, theta)  # shape (max_positions, dim/2)
+    rope_cache = torch.stack((freqs.cos(), freqs.sin()), dim=-1)  # shape (max_positions, dim/2, 2)
     ### END YOUR CODE ###
     return rope_cache
 
@@ -51,9 +54,20 @@ def apply_rotary_emb(x, rope_cache):
     # truncate the precomputed values to match the length of the sequence.
 
     rotated_x = None
+    
     ### YOUR CODE HERE ###
-    pass
+    seq_len = x.size(2)
+    rope_cache = rope_cache[:seq_len]  # truncate if necessary
+    # Convert from (seq_len, dim//2, 2) to separate cos/sin
+    cos = rope_cache[..., 0].unsqueeze(0).unsqueeze(0) 
+    sin = rope_cache[..., 1].unsqueeze(0).unsqueeze(0)
+    # Split x into even and odd parts
+    x1 = x[..., ::2]
+    x2 = x[..., 1::2]
+    # Apply rotation
+    rotated_x = torch.cat([x1 * cos - x2 * sin, x1 * sin + x2 * cos], dim=-1)
     ### END YOUR CODE ###
+    
     return rotated_x
 
 class CausalSelfAttention(nn.Module):
@@ -79,8 +93,10 @@ class CausalSelfAttention(nn.Module):
             # store them in rope_cache.
             # Hint: The maximum sequence length is given by config.block_size.
             rope_cache = None
+            
             ### YOUR CODE HERE ###
-            pass
+            head_dim = config.n_embd // config.n_head
+            rope_cache = precompute_rotary_emb(head_dim, config.block_size)
             ### END YOUR CODE ###
 
             self.register_buffer("rope_cache", rope_cache)
@@ -106,7 +122,8 @@ class CausalSelfAttention(nn.Module):
         if self.rope:
             # TODO: [part g] Apply RoPE to the query and key.
             ### YOUR CODE HERE ###
-            pass
+            q = apply_rotary_emb(q, self.rope_cache)
+            k = apply_rotary_emb(k, self.rope_cache)
             ### END YOUR CODE ###
 
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)

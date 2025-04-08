@@ -1,15 +1,14 @@
 import random
 import argparse
-
 import dataset
 import models
 import trainer
 import utils
-
 import torch
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from trainer import Trainer, TrainerConfig
+from models import GPT
 
 
 random.seed(0)
@@ -69,7 +68,6 @@ if args.variant == 'vanilla':
     # TODO: [part c] Make some model here
    
     ### YOUR CODE HERE ###
-    from models import GPT
     model = GPT(mconf).to(device)
     ### END YOUR CODE ###
     
@@ -77,7 +75,8 @@ elif args.variant == 'rope':
     # TODO: [part g] Make some other model here
     # set mconf.rope parameter
     ### YOUR CODE HERE ###
-    pass
+    mconf.rope = True  # this flag needs to be checked inside the attention layers
+    model = GPT(mconf).to(device)
     ### END YOUR CODE ###
 else:
     raise ValueError("Unknown model variant")
